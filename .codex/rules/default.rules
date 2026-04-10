@@ -1,0 +1,104 @@
+# Allow the project verification script without repeated prompts.
+prefix_rule(
+  pattern = ["bash", "scripts/verify.sh"],
+  decision = "allow",
+  justification = "Project-standard verification entrypoint.",
+  match = [
+    "bash scripts/verify.sh",
+  ],
+  not_match = [
+    "bash ./scripts/verify.sh",
+    "bash scripts/other.sh",
+  ],
+)
+
+# Allow direct Gradle quality gates used by the verify script.
+prefix_rule(
+  pattern = ["./gradlew", ["spotlessCheck", "checkstyleMain", "test"]],
+  decision = "allow",
+  justification = "Standard quality gates for this repository.",
+  match = [
+    "./gradlew spotlessCheck",
+    "./gradlew checkstyleMain",
+    "./gradlew test",
+  ],
+  not_match = [
+    "./gradlew build",
+    "./gradlew clean test",
+  ],
+)
+
+# Prompt before creating commits.
+prefix_rule(
+  pattern = ["git", "commit"],
+  decision = "prompt",
+  justification = "Committing changes should stay user-reviewed.",
+  match = [
+    "git commit -m chore",
+    "git commit --amend",
+  ],
+  not_match = [
+    "git status",
+    "git add .",
+  ],
+)
+
+# Prompt before pushing.
+prefix_rule(
+  pattern = ["git", "push"],
+  decision = "prompt",
+  justification = "Pushing code should always be reviewed first.",
+  match = [
+    "git push",
+    "git push origin main",
+  ],
+  not_match = [
+    "git pull",
+    "git status",
+  ],
+)
+
+# Forbid force-push.
+prefix_rule(
+  pattern = ["git", "push", "--force"],
+  decision = "forbidden",
+  justification = "Do not rewrite remote history from Codex. Use normal push or handle manually.",
+  match = [
+    "git push --force",
+    "git push --force origin feature-branch",
+  ],
+  not_match = [
+    "git push",
+    "git push --tags",
+  ],
+)
+
+# Forbid destructive hard reset.
+prefix_rule(
+  pattern = ["git", "reset", "--hard"],
+  decision = "forbidden",
+  justification = "Hard reset is destructive. Use safer recovery steps manually.",
+  match = [
+    "git reset --hard",
+    "git reset --hard HEAD~1",
+  ],
+  not_match = [
+    "git reset --soft HEAD~1",
+    "git restore .",
+  ],
+)
+
+# Forbid destructive remove patterns.
+prefix_rule(
+  pattern = ["rm", "-rf", ["/", "."]],
+  decision = "forbidden",
+  justification = "Destructive recursive deletes are never allowed.",
+  match = [
+    "rm -rf /",
+    "rm -rf .",
+  ],
+  not_match = [
+    "rm -rf build",
+    "rm -rf .gradle",
+  ],
+)
